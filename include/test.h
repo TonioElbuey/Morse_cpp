@@ -6,4 +6,6 @@ class test {
 public:
 
     bool audio_preExtract();
+
+    void audio_extract();
 };

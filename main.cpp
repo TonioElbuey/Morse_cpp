@@ -6,6 +6,5 @@ using namespace std;
 int main() {
 
     test T;
-    bool valid = T.audio_preExtract();
-    cout << valid << endl;
+    T.audio_extract();
 }

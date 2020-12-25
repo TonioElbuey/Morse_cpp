@@ -17,8 +17,12 @@ make -j4
 -Rédiger documentation
 -Faire une série de test
 -Faire une interface utilisateur
+-Extraction tailles des données à refaire
+-rajouter de la souplesse si jamais les échantillon sont codés sur plusieurs octets
 
 ### QUESTIONS
 
 -Comment indiquer un retour de fonction de type array ?
 -Conversion string vers entier ?
+-Obliger de lire des char ?
+-Lecture .WAV ???

@@ -18,3 +18,10 @@ bool test::audio_preExtract(){
 
     return valid;
 }
+
+void test::audio_extract(){
+
+    audio exemple;
+    exemple.define_filePath("../Exemple_morse.wav");
+    exemple.extract();
+}
