@@ -6,5 +6,5 @@ using namespace std;
 int main() {
 
     test T;
-    T.audio_extract();
+    T.fillWave_testSinus();
 }

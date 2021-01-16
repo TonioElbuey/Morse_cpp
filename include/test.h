@@ -1,11 +1,19 @@
 #pragma once
-#include "audio.h"
+#include "../include/msg.h"
 
-class test {
+class test { //   Calsse pour vérifier chacune des méthodes de chaque classe
 
 public:
 
-    bool audio_preExtract();
+    bool frToMorse();
 
-    void audio_extract();
+    bool morseToFr();
+
+    bool preExtract();
+
+    void extract();
+
+    bool createWave();
+
+    void fillWave_testSinus();
 };
