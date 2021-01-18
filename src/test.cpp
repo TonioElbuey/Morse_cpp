@@ -2,6 +2,8 @@
 #include "../include/test.h"
 #include "../include/audio.h"
 
+
+
 bool test::frToMorse() {
 
     msg sos;
@@ -17,6 +19,8 @@ bool test::frToMorse() {
     return valid;
 }
 
+
+
 bool test::morseToFr() {
 
     msg sos;
@@ -31,6 +35,8 @@ bool test::morseToFr() {
     std::cout << sos.get_msg_fr() << std::endl; 
     return valid;
 }
+
+
 
 bool test::preExtract() {
 
@@ -49,6 +55,8 @@ bool test::preExtract() {
     return valid;
 }
 
+
+
 void test::extract() {
 
     audio exemple;
@@ -56,7 +64,7 @@ void test::extract() {
     exemple.preExtract();
     exemple.extract();
 
-    std::vector<int> data;
+    std::vector<uint16_t> data;
     data = exemple.get_binaryData();
     int length = data.size();
 
@@ -64,6 +72,8 @@ void test::extract() {
         std::cout << data[i] << std::endl;
     }
 }
+
+
 
 bool test::createWave() {
 
@@ -94,6 +104,8 @@ bool test::createWave() {
     return valid;
 }
 
+
+
 void test::fillWave_testSinus() {
 
     audio exemple;
@@ -103,7 +115,7 @@ void test::fillWave_testSinus() {
     float duration = 10;
 
     exemple.fillWave_testSinus(duration, freq);
-    std::vector<int> data;
+    std::vector<uint16_t> data;
     data = exemple.get_binaryData();
     int length = data.size();
 
@@ -112,4 +124,61 @@ void test::fillWave_testSinus() {
     }
 
     exemple.finalWave();
+}
+
+
+
+bool test::lissage() {
+
+    audio exemple;
+    std::vector<uint16_t> test = {1,2,6,4,5};
+    exemple.set_binaryData(test);
+    exemple.set_nbSample(5);
+    exemple.lissage();
+    bool valid = true;
+
+    if (exemple.get_binaryData() != (std::vector<uint16_t>) {1,3,4,5,5}) {
+        valid = false;
+    }
+    return valid;
+}
+
+
+
+void test::detecLogicData() {
+
+    audio exemple;
+    std::vector<uint16_t> test = {1,2,0,0,5};
+    exemple.set_binaryData(test);
+    exemple.set_nbSample(5);
+    exemple.detecLogicData();
+    std::vector<bool> detec = exemple.get_logicData();
+
+    for (int i=0; i<5; i++) {
+        std::cout << detec[i] << std::endl;
+    }
+}
+
+
+
+bool test::detecDurations() {
+
+    audio exemple;
+    std::vector<uint16_t> test = {1,2,0,0,5};
+    exemple.set_binaryData(test);
+    exemple.set_nbSample(5);
+    exemple.detecLogicData();
+    exemple.detecDurations();
+
+    int dotPulse = exemple.get_dotDuration()*exemple.get_freqEch();
+    int intraLetterPulse = exemple.get_intraLetterDuration()*exemple.get_freqEch();
+
+    bool valid = true;
+    if (dotPulse != 2){
+        valid = false;
+    }
+    if (intraLetterPulse != 2){
+        valid = false;
+    }
+    return false;
 }

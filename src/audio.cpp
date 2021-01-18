@@ -1,7 +1,27 @@
 #include "../include/audio.h"
 
+audio::audio() {
+    dashDuration = 3*dotDuration;
+    interWordDuration = 7*intraLetterDuration;
+    interLetterDuration = 3*intraLetterDuration;
+}
+
+
+
 void audio::set_filePath(string path){
     filePath = path;
+}
+
+
+
+void audio::set_binaryData(std::vector<uint16_t> data) {
+    binaryData = data;
+}
+
+
+
+void audio::set_nbSample(int nb) {
+    nbSample = nb;
 }
 
 
@@ -24,13 +44,30 @@ int audio::get_tailleFichier(){
 
 
 
-std::vector<int> audio::get_binaryData(){
+std::vector<uint16_t> audio::get_binaryData(){
     return binaryData;
+}
+
+
+
+std::vector<bool> audio::get_logicData(){
+    return logicData;
 }
 
 
 int audio::get_freqEch(){
     return freqEch;
+}
+
+
+float audio::get_dotDuration(){
+    return dotDuration;
+}
+
+
+
+float audio::get_intraLetterDuration(){
+    return intraLetterDuration;
 }
 
 
@@ -314,11 +351,13 @@ void audio::fillWave_testSinus(float duration, float freq) {
     }
 }
 
+
+
 void audio::finalWave() {
 
     /* Le but de cette méthode est de compléter les données manquantes lors de l'écriture de l'entête */
 
-    tailleData = sizeof(uint16_t)*binaryData.size(); //  Actualisation du nb de données
+    tailleData = bitDepth*binaryData.size(); //  Actualisation du nb de données
     tailleFichier = tailleData + 44; //  Actualisation taille fichier avec entête
 
     std::ofstream wav;
@@ -343,4 +382,76 @@ void audio::finalWave() {
     else {
         std::cerr << "Problème d'ouverture de fichier pour écriture !" << std::endl;
     }
+}
+
+
+
+void audio::lissage() {
+
+    /* Lissage du signal pour éviter l'interprétation de "0" issus du sinus et non d'un silence morse */
+
+    std::vector<uint16_t> binaryDataFinal = binaryData;
+
+    for (int i=1; i<nbSample-1; i++) {
+
+        int somme = binaryData[i-1] + binaryData[i] + binaryData[i+1]; //  Moyenne sur 3 éléments
+        binaryDataFinal[i] = (somme / 3);
+    }
+
+    binaryData = binaryDataFinal;
+}
+
+
+
+void audio::detecLogicData() {
+
+    /* Création d'une liste des données en booléen pour la détection de la durée d'un dot */
+
+    for (int i=0; i<nbSample; i++) {
+
+        logicData.push_back(0 < binaryData[i]);
+    }
+}
+
+
+
+void audio::detecDurations() {
+
+    int nbTrueMax = 0;  //  Nb maximum de niveaux haut successifs (dashDuration)
+    int nbFalseMin = 0; //  Nb minimum de niveau bas successfis (intraLetterDuration)
+
+    int i=0;
+    while (i < (nbSample - nbTrueMax)) { //  Recherche pour nbTrueMax
+    
+        int j=i;
+        while( (j<nbSample) and logicData[j]) {
+            j++;
+        }
+        if ( (j-i) > nbTrueMax ) {
+            nbTrueMax = j-i;
+        }
+        i++;
+    }
+
+    /* On peut optimiser le programme avec une seule boucle while mais ici la clareté est privilégiée */
+
+    i=0;
+    while (i < nbSample) {  //  Recherche pour nbFalseMin
+
+        int j=i;
+        while( (j<nbSample) and not(logicData[j])) {
+            j++;
+        }
+        if ( (j-i) < nbFalseMin ) {
+            nbFalseMin = j-i;
+        }
+        i++;
+    }
+
+    dashDuration = nbTrueMax/freqEch;
+    dotDuration = dashDuration / 3;
+
+    intraLetterDuration = nbFalseMin/freqEch;
+    interLetterDuration = 3*intraLetterDuration;
+    interWordDuration = 7*intraLetterDuration;
 }

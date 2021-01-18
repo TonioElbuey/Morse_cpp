@@ -6,5 +6,5 @@ using namespace std;
 int main() {
 
     test T;
-    T.fillWave_testSinus();
+    std::cout << T.detecDurations() << std::endl;
 }

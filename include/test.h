@@ -16,4 +16,10 @@ public:
     bool createWave();
 
     void fillWave_testSinus();
+
+    bool lissage();
+
+    void detecLogicData();
+
+    bool detecDurations();
 };
