@@ -6,5 +6,5 @@ using namespace std;
 int main() {
 
     test T;
-    std::cout << T.detecDurations() << std::endl;
+    T.analyseLogicData();
 }

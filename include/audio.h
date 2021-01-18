@@ -18,10 +18,6 @@ public:
 
     void set_nbSample(int nb);
 
-    void preExtract();
-
-    void extract();
-
     int get_bitDepth();
 
     int get_tailleData();
@@ -34,9 +30,15 @@ public:
 
     float get_intraLetterDuration();
 
+    float get_dashDuration();
+
     std::vector<uint16_t> get_binaryData();
 
     std::vector<bool> get_logicData();
+
+    void preExtract();
+
+    void extract();
 
     void createWave();
 
@@ -51,6 +53,8 @@ public:
     void detecLogicData();
 
     void detecDurations();
+
+    std::string analyseLogicData();
 
 private:
 
@@ -77,6 +81,6 @@ private:
     float interWordDuration = 0;
     float dashDuration = 0;
 
-    float tolerance = 0.8;//Tolérance pour la détection
+    float tolerance = 0.9;//Tolérance pour la détection
     
 };

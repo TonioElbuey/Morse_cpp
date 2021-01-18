@@ -72,6 +72,12 @@ float audio::get_intraLetterDuration(){
 
 
 
+float audio::get_dashDuration(){
+    return dashDuration;
+}
+
+
+
 void audio::preExtract(){
 
     ifstream fichier(filePath, ios::binary);  //Ouverture fichier en mode lecture
@@ -418,7 +424,7 @@ void audio::detecLogicData() {
 void audio::detecDurations() {
 
     int nbTrueMax = 0;  //  Nb maximum de niveaux haut successifs (dashDuration)
-    int nbFalseMin = 0; //  Nb minimum de niveau bas successfis (intraLetterDuration)
+    int nbFalseMin = nbSample; //  Nb minimum de niveau bas successfis (intraLetterDuration)
 
     int i=0;
     while (i < (nbSample - nbTrueMax)) { //  Recherche pour nbTrueMax
@@ -430,7 +436,7 @@ void audio::detecDurations() {
         if ( (j-i) > nbTrueMax ) {
             nbTrueMax = j-i;
         }
-        i++;
+        i=j+1;
     }
 
     /* On peut optimiser le programme avec une seule boucle while mais ici la clareté est privilégiée */
@@ -442,16 +448,60 @@ void audio::detecDurations() {
         while( (j<nbSample) and not(logicData[j])) {
             j++;
         }
-        if ( (j-i) < nbFalseMin ) {
+        if ( (0 < (j-i)) and ((j-i) < nbFalseMin) ) {
             nbFalseMin = j-i;
         }
-        i++;
+        i=j+1;
     }
 
-    dashDuration = nbTrueMax/freqEch;
+    dashDuration = ((float) nbTrueMax)/((float) freqEch);
     dotDuration = dashDuration / 3;
 
-    intraLetterDuration = nbFalseMin/freqEch;
+    intraLetterDuration = ((float) nbFalseMin)/((float) freqEch);
     interLetterDuration = 3*intraLetterDuration;
     interWordDuration = 7*intraLetterDuration;
+}
+
+
+
+std::string audio::analyseLogicData() {
+
+    bool buffer = logicData[0]; //  Extraction premier terme
+    int i = 0; //   Variable pour balayage du message
+    std::string msg = "";
+
+    while (i<nbSample) {
+
+        int j=i; //  Variable de détection d'un caractère ou espace en morse
+        while ( (j<nbSample) and (logicData[j]==buffer) ) { //  Détection
+            j++;
+        }
+        float duration = ((float) (j-i))/((float) freqEch); //   Calcul longueur
+
+        /* La détection va du plus long pour un niveau logique au plus court */
+
+        if ( buffer and (duration > tolerance*dashDuration) ) { //  Détection tiret
+            msg += "-";
+        }
+        else if ( buffer and (duration > tolerance*dotDuration) ) { //  Détection point
+            msg += ".";
+        }
+        else if ( not(buffer) and (duration > tolerance*interWordDuration) ) { //  Détection espace inter-mots
+            msg += "   ";
+        }
+        else if ( not(buffer) and (duration > tolerance*interLetterDuration) ) { // Détection espace inter-lettre
+            msg += " "; 
+        }
+        else if ( not(buffer) and (duration > tolerance*intraLetterDuration) ) { // Détection espace intra-lettre
+            msg += "";
+        }
+        else {
+            std::cerr << "Problème durant l'interprétation temporelle du signal !" << std::endl;
+        }
+
+        i=j+1; //   Passage au caractère suivant
+        buffer = logicData[i];
+    }
+
+    return msg;
 }

@@ -170,15 +170,28 @@ bool test::detecDurations() {
     exemple.detecLogicData();
     exemple.detecDurations();
 
-    int dotPulse = exemple.get_dotDuration()*exemple.get_freqEch();
+    int dashPulse = exemple.get_dashDuration()*exemple.get_freqEch();
     int intraLetterPulse = exemple.get_intraLetterDuration()*exemple.get_freqEch();
 
     bool valid = true;
-    if (dotPulse != 2){
+    if (dashPulse != 2){
         valid = false;
     }
     if (intraLetterPulse != 2){
         valid = false;
     }
-    return false;
+    return valid;
+}
+
+
+
+void test::analyseLogicData() {
+
+    audio exemple;
+    exemple.set_filePath("../wave_exemples/sos.wav");
+    exemple.preExtract();
+    exemple.extract();
+    exemple.detecLogicData();
+    exemple.detecDurations();
+    std::cout << exemple.analyseLogicData() << std::endl;
 }

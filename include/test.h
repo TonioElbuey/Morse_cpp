@@ -22,4 +22,6 @@ public:
     void detecLogicData();
 
     bool detecDurations();
+
+    void analyseLogicData();
 };
