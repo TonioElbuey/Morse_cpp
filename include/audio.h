@@ -56,6 +56,10 @@ public:
 
     std::string analyseLogicData();
 
+    void createLogicData(std::string msg);
+
+    void createBinary();
+
 private:
 
     /* Variables pour la gestion du fichier audio */
@@ -74,13 +78,15 @@ private:
 
     /* Variables sur les propriétés du message */
 
-    float dotDuration = 1;//Temps en ms
-    float intraLetterDuration = 1;
+    float dotDuration = 100;// Temps en ms
+    float intraLetterDuration = 50;
 
-    float interLetterDuration = 0;//Variables initialisées dans le constructeur ou le détecteur
+    float interLetterDuration = 0;// Variables initialisées dans le constructeur ou le détecteur
     float interWordDuration = 0;
     float dashDuration = 0;
 
-    float tolerance = 0.9;//Tolérance pour la détection
+    float tolerance = 0.9;// Tolérance pour la détection
+
+    float freqSin = 800; // Fréquence en Hz
     
 };

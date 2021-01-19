@@ -308,10 +308,8 @@ void audio::fillWave() {
     wav.open(filePath, std::ofstream::app | std::ofstream::binary);
 
     if (wav.is_open()) {
-
-        int len = binaryData.size();
         
-        for (int i=0; i<len; i++) {
+        for (int i=0; i<nbSample; i++) {
 
             uint16_t byte = binaryData[i]; // Extraction donnée (ATTTENTION ne fonctionne qu'avec 16 bits pour bitDepth !) 
             wav.write(reinterpret_cast<char*>(&byte), sizeof(byte));
@@ -338,14 +336,14 @@ void audio::fillWave_testSinus(float duration, float freq) {
         float period = 1000 / freq;
         nbSample = duration / periodEch;
         uint16_t offset = pow(2,8*sizeof(uint16_t)-1); //  Calcul offset
-        uint amplitude = pow(2,8*sizeof(uint16_t)) - 1; //  Calcul amplitude
+        uint16_t amplitude = pow(2,8*sizeof(uint16_t)) - 1; //  Calcul amplitude
 
         for (int i=0; i<nbSample; i++) {
 
-            time += periodEch;
-            uint16_t signal = ((float) amplitude)*sin(period*time); //  Création signal (ATTENTION ne fonctionne qu'avec 16 bits pour bitDepth)
+            uint16_t signal = ((float) amplitude)*sin(2*3.14*time/period); //  Création signal (ATTENTION ne fonctionne qu'avec 16 bits pour bitDepth)
             signal += offset; //  Décalage pour recentrer sur la plage de codage
             binaryData.push_back(signal);
+            time += periodEch;
 
             wav.write(reinterpret_cast<char*>(&signal), sizeof(signal)); //  Ajout dans le fichier
         }
@@ -367,19 +365,19 @@ void audio::finalWave() {
     tailleFichier = tailleData + 44; //  Actualisation taille fichier avec entête
 
     std::ofstream wav;
-    wav.open(filePath, std::ofstream::app | std::ofstream::binary);
+    wav.open(filePath, std::ofstream::out | std::ofstream::binary);
 
     if (wav.is_open()) {
         
         //  1. Ajout taille du fichier
-
-        wav.seekp(5, std::ios::beg); //  Replacement au bon endroit
+        
+        wav.seekp(4); //  Replacement au bon endroit
         uint32_t tailleFichier_ex = tailleFichier - 8; //  Application de la norme
         wav.write(reinterpret_cast<char*>(&tailleFichier_ex), sizeof(tailleFichier_ex));
 
         //  2. Ajout taille des données
 
-        wav.seekp(41, std::ios::beg); //  Replacement au bon endroit
+        wav.seekp(40); //  Replacement au bon endroit
         wav.write(reinterpret_cast<char*>(&tailleData), sizeof(tailleData));
         
 
@@ -442,6 +440,10 @@ void audio::detecDurations() {
     /* On peut optimiser le programme avec une seule boucle while mais ici la clareté est privilégiée */
 
     i=0;
+    while ( not(logicData[i]) ) { //   Passage du silence initial ne correspondant pas à un caractère
+        i++;
+    }
+
     while (i < nbSample) {  //  Recherche pour nbFalseMin
 
         int j=i;
@@ -454,10 +456,10 @@ void audio::detecDurations() {
         i=j+1;
     }
 
-    dashDuration = ((float) nbTrueMax)/((float) freqEch);
+    dashDuration = 1000*((float) nbTrueMax)/((float) freqEch);
     dotDuration = dashDuration / 3;
 
-    intraLetterDuration = ((float) nbFalseMin)/((float) freqEch);
+    intraLetterDuration = 1000*((float) nbFalseMin)/((float) freqEch);
     interLetterDuration = 3*intraLetterDuration;
     interWordDuration = 7*intraLetterDuration;
 }
@@ -466,17 +468,24 @@ void audio::detecDurations() {
 
 std::string audio::analyseLogicData() {
 
-    bool buffer = logicData[0]; //  Extraction premier terme
     int i = 0; //   Variable pour balayage du message
+    int j = 0; //   Variable pour détection caractère
+    float duration = 0;
     std::string msg = "";
+
+    while ( not(logicData[i]) ) { //   Passage du silence initial ne correspondant pas à un caractère
+        i++;
+    }
+
+    bool buffer = logicData[i]; //  Extraction premier terme
 
     while (i<nbSample) {
 
-        int j=i; //  Variable de détection d'un caractère ou espace en morse
+        j=i; //  Variable de détection d'un caractère ou espace en morse
         while ( (j<nbSample) and (logicData[j]==buffer) ) { //  Détection
             j++;
         }
-        float duration = ((float) (j-i))/((float) freqEch); //   Calcul longueur
+        duration = 1000*((float) (j-i))/((float) freqEch); //   Calcul durée en ms
 
         /* La détection va du plus long pour un niveau logique au plus court */
 
@@ -487,7 +496,7 @@ std::string audio::analyseLogicData() {
             msg += ".";
         }
         else if ( not(buffer) and (duration > tolerance*interWordDuration) ) { //  Détection espace inter-mots
-            msg += "   ";
+            msg += "  ";
         }
         else if ( not(buffer) and (duration > tolerance*interLetterDuration) ) { // Détection espace inter-lettre
             msg += " "; 
@@ -504,4 +513,86 @@ std::string audio::analyseLogicData() {
     }
 
     return msg;
+}
+
+
+
+void audio::createLogicData(std::string msg) {
+
+    /* Calcul du nb d'échantillon par caractère */
+
+    uint dashPulse = dashDuration*freqEch/1000;
+    uint dotPulse = dotDuration*freqEch/1000;
+    uint intraLetterPulse = intraLetterDuration*freqEch/1000;
+    uint interLetterPulse = interLetterDuration*freqEch/1000;
+    uint interWordPulse = interWordDuration*freqEch/1000;
+
+    for (int k=0; k<intraLetterPulse; k++) { //   Silence initial
+                logicData.push_back(false);
+        }
+    int len = msg.size();
+
+    int i = 0; //   Variable de parcours
+    int j = 0; //   Itérateur pour extraction caractère morse complet
+
+    while (i<len) { //   Décodage caractère morse par caractère morse
+        
+        if ( msg[i] == '.' ) {
+            for (int k=0; k<dotPulse; k++) {
+                logicData.push_back(true);
+            }
+            i++;
+        }
+        else if ( msg[i] == '-' ) {
+            for (int k=0; k<dashPulse; k++) {
+                logicData.push_back(true);
+            }
+            i++;
+        }
+        else if ( (i<len-1) and (msg[i] == ' ') and (msg[i+1] == ' ') ) {
+            for (int k=0; k<interWordPulse; k++) {
+                logicData.push_back(false);
+            }
+            i = i+2;
+        }
+        else if ( msg[i] == ' ' ) {
+            for (int k=0; k<interLetterPulse; k++) {
+                logicData.push_back(false);
+            }
+            i++;
+        }
+        else {
+            std::cerr << "Problème d'interprétation d'un caractère morse !" << std::endl;
+        }
+
+        for (int k=0; k<intraLetterPulse; k++) { //   Séparation intra-Lettres
+                logicData.push_back(false);
+        }
+    }
+
+    nbSample = logicData.size();
+}
+
+
+
+void audio::createBinary() {
+
+    float time = 0; //  Variable temporelle pour le sinus
+    float periodEch = 1/freqEch; // Période en s (ATTENTION pas ms)
+
+    uint16_t offset = pow(2,8*sizeof(uint16_t)-1); //  Calcul offset
+    uint16_t amplitude = pow(2,8*sizeof(uint16_t)) - 1; //  Calcul amplitude
+    
+    for (int i=0; i<nbSample; i++) {
+
+        if (logicData[i]) { //  Si émission
+            uint16_t signal = ((float) amplitude)*sin(2*3.14*time*freqSin); //  Création signal (ATTENTION ne fonctionne qu'avec 16 bits pour bitDepth)
+            signal += offset; //  Décalage pour recentrer sur la plage de codage
+            binaryData.push_back(signal);
+        }
+        else { //   Si silence
+            binaryData.push_back(0);
+        }
+        time += periodEch;
+    }
 }

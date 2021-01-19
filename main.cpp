@@ -6,5 +6,5 @@ using namespace std;
 int main() {
 
     test T;
-    T.analyseLogicData();
+    T.fillWave_testSinus();
 }

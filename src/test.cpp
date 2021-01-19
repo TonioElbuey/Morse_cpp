@@ -80,6 +80,7 @@ bool test::createWave() {
     audio exemple;
     exemple.set_filePath("../wave_exemples/test_creation_entete.wav");
     exemple.createWave();
+
     exemple.preExtract();
 
     std::cout << "tailleFichier : " << exemple.get_tailleFichier() << std::endl;
@@ -111,10 +112,11 @@ void test::fillWave_testSinus() {
     audio exemple;
     exemple.set_filePath("../wave_exemples/test_sinusPur.wav");
     exemple.createWave();
-    float freq = 800; //  En Hz
-    float duration = 10;
 
-    exemple.fillWave_testSinus(duration, freq);
+    float freq = 800; //  En Hz
+    float secDuration = 10; // En s
+
+    exemple.fillWave_testSinus(secDuration, freq);
     std::vector<uint16_t> data;
     data = exemple.get_binaryData();
     int length = data.size();
@@ -170,8 +172,8 @@ bool test::detecDurations() {
     exemple.detecLogicData();
     exemple.detecDurations();
 
-    int dashPulse = exemple.get_dashDuration()*exemple.get_freqEch();
-    int intraLetterPulse = exemple.get_intraLetterDuration()*exemple.get_freqEch();
+    int dashPulse = exemple.get_dashDuration()*exemple.get_freqEch()/1000;
+    int intraLetterPulse = exemple.get_intraLetterDuration()*exemple.get_freqEch()/1000;
 
     bool valid = true;
     if (dashPulse != 2){
@@ -191,6 +193,7 @@ void test::analyseLogicData() {
     exemple.set_filePath("../wave_exemples/sos.wav");
     exemple.preExtract();
     exemple.extract();
+    exemple.lissage();
     exemple.detecLogicData();
     exemple.detecDurations();
     std::cout << exemple.analyseLogicData() << std::endl;
