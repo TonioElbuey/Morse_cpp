@@ -113,7 +113,7 @@ void test::fillWave_testSinus() {
     exemple.set_filePath("../wave_exemples/test_sinusPur.wav");
     exemple.createWave();
 
-    float freq = 800; //  En Hz
+    float freq = 440; //  En Hz
     float secDuration = 10; // En s
 
     exemple.fillWave_testSinus(secDuration, freq);

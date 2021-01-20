@@ -8,6 +8,17 @@ audio::audio() {
 
 
 
+audio::~audio() {
+    if (wavR.is_open()) {
+        wavR.close();
+    }
+    if (wavC.is_open()) {
+        wavC.close();
+    }
+}
+
+
+
 void audio::set_filePath(string path){
     filePath = path;
 }
@@ -80,16 +91,16 @@ float audio::get_dashDuration(){
 
 void audio::preExtract(){
 
-    ifstream fichier(filePath, ios::binary);  //Ouverture fichier en mode lecture
+    wavR.open(filePath, ios::binary);  //Ouverture fichier en mode lecture
  
-    if(fichier.is_open())  //Si ouverture réussie
+    if(wavR.is_open())  //Si ouverture réussie
     {   
         bool valid = true; //Variable de vérification de la validité du fichier
 
         //  1. Vérification RIFF
 
         char RIFF[4];
-        fichier.read(RIFF, sizeof(RIFF)); //Lecture constante d'entête du fichier
+        wavR.read(RIFF, sizeof(RIFF)); //Lecture constante d'entête du fichier
         std::string RIFF_str = RIFF;
         RIFF_str.resize(4);
 
@@ -100,13 +111,13 @@ void audio::preExtract(){
         //  2. Extraction taille fichier
 
         uint32_t tailleFichier_ex;
-        fichier.read(reinterpret_cast<char*>(&tailleFichier_ex), sizeof(tailleFichier_ex));
+        wavR.read(reinterpret_cast<char*>(&tailleFichier_ex), sizeof(tailleFichier_ex));
         tailleFichier_ex += 8; //Ajout taille des deux premières infos d'entête
         
         //  3. Vérification format
 
         char format[4];
-        fichier.read(format, sizeof(format));
+        wavR.read(format, sizeof(format));
         std::string format_str = format;
         format_str.resize(4);
 
@@ -116,12 +127,12 @@ void audio::preExtract(){
 
         //  4. Passage informations non exploitées
 
-        fichier.ignore(10);
+        wavR.ignore(10);
 
         //  5. Vérification de l'unicité du canal
 
         uint16_t nbCanaux;
-        fichier.read(reinterpret_cast<char*>(&nbCanaux), sizeof(nbCanaux));
+        wavR.read(reinterpret_cast<char*>(&nbCanaux), sizeof(nbCanaux));
 
         if (nbCanaux != 1){
             valid = false;
@@ -130,21 +141,21 @@ void audio::preExtract(){
         //  6. Extraction fréquence d'échantillonnage
 
         uint32_t freqEch_ex;
-        fichier.read(reinterpret_cast<char*>(&freqEch_ex), sizeof(freqEch_ex));
+        wavR.read(reinterpret_cast<char*>(&freqEch_ex), sizeof(freqEch_ex));
 
         //  7. Passage informations non exploitées
 
-        fichier.ignore(6);
+        wavR.ignore(6);
 
         //  8. Extraction nombre de bits par échantillon
 
         uint16_t bitDepth_ex;
-        fichier.read(reinterpret_cast<char*>(&bitDepth_ex), sizeof(bitDepth_ex));
+        wavR.read(reinterpret_cast<char*>(&bitDepth_ex), sizeof(bitDepth_ex));
 
         //  9. Vérification entrée dans le boc de données
 
         char data[4];
-        fichier.read(data, sizeof(data));
+        wavR.read(data, sizeof(data));
         std::string data_str = data;
         data_str.resize(4);
 
@@ -155,11 +166,8 @@ void audio::preExtract(){
         //  10. Extraction taille des données
 
         uint32_t tailleData_ex;
-        fichier.read(reinterpret_cast<char*>(&tailleData_ex), sizeof(tailleData_ex));  
+        wavR.read(reinterpret_cast<char*>(&tailleData_ex), sizeof(tailleData_ex));  
 
-        //  11. Attribution et vérification
-
-        fichier.close();
 
         if (valid){ //Récupération des données obtenues
             bitDepth = bitDepth_ex;
@@ -181,13 +189,11 @@ void audio::preExtract(){
 
 void audio::extract(){
 
-    ifstream wav(filePath, ios::binary);  //Ouverture fichier en mode lecture
-
-    if (wav.is_open()){
+    if (wavR.is_open()) {
 
         //  1. Passage de l'entête
 
-        wav.ignore(44);
+        wavR.ignore(44);
 
         //  2. Préparation à l'extraction de données
 
@@ -196,18 +202,16 @@ void audio::extract(){
         //  3. EXtraction données entières
 
         nbSample = 0;
-        while(wav){
+        while(wavR) {
 
             int sample;
-            wav.read(reinterpret_cast<char*>(&sample), bytDepth);
+            wavR.read(reinterpret_cast<char*>(&sample), bytDepth);
             binaryData.push_back(sample);
             nbSample++;
         }
-
-        wav.close();
     }
     else{
-        cerr << "Impossible d'ouvrir le fichier pour lecture !" << endl;
+        cerr << "Impossible d'ouvrir le fichier pour lecture ! Pre-extraction oubliée ?" << endl;
     }
 }
 
@@ -215,85 +219,82 @@ void audio::extract(){
 
 void audio::createWave() {
 
-    std::ofstream wav;
-    wav.open(filePath, std::ofstream::out | std::ofstream::binary);
+    wavC.open(filePath, std::ofstream::out | std::ofstream::binary);
 
-    if (wav.is_open())
+    if (wavC.is_open())
     {
         //  1. Entête de déclaration au format WAVE
 
         //      1.1 Ecriture "RIFF"
 
         char RIFF[4] = {'R', 'I', 'F', 'F'};
-        wav.write(RIFF, sizeof(RIFF));
+        wavC.write(RIFF, sizeof(RIFF));
 
         //      1.2 Ecriture de la taille
 
         //tailleFichier est déjà initialisé à 0, il sera rempli plus tard...
-        wav.write(reinterpret_cast<char*>(&tailleFichier), sizeof(tailleFichier));
+        wavC.write(reinterpret_cast<char*>(&tailleFichier), sizeof(tailleFichier));
 
         //      1.3 Ecriture du format
 
         char format[4] = {'W', 'A', 'V', 'E'};
-        wav.write(format, sizeof(format));
+        wavC.write(format, sizeof(format));
 
         //  2. Entête décrivant le format audio
 
         //      2.1 Ecriture de l'identifiant
 
         char id[4] = {'f', 'm', 't', ' '};
-        wav.write(id, sizeof(id));
+        wavC.write(id, sizeof(id));
 
         //      2.2 Ecriture de la taille du bloc de description
 
         uint32_t tailleBloc = 16;
-        wav.write(reinterpret_cast<char*>(&tailleBloc), sizeof(tailleBloc));
+        wavC.write(reinterpret_cast<char*>(&tailleBloc), sizeof(tailleBloc));
 
         //      2.3 Ecriture du format de stockage
 
         uint16_t formatStock = 1;
-        wav.write(reinterpret_cast<char*>(&formatStock), sizeof(formatStock));
+        wavC.write(reinterpret_cast<char*>(&formatStock), sizeof(formatStock));
 
         //      2.4 Ecriture du nb de canaux
 
         uint16_t nbCanaux = 1;
-        wav.write(reinterpret_cast<char*>(&nbCanaux), sizeof(nbCanaux));
+        wavC.write(reinterpret_cast<char*>(&nbCanaux), sizeof(nbCanaux));
 
         //      2.5 Ecriture de la fréquence d'échantillonnage
 
         //freqEch est déjà initialisé à 11 025 Hz
-        wav.write(reinterpret_cast<char*>(&freqEch), sizeof(freqEch));
+        wavC.write(reinterpret_cast<char*>(&freqEch), sizeof(freqEch));
 
         //      2.6 Ecriture du nb d'octets à lire par seconde
 
         uint16_t bytePerBloc = bitDepth / 2; //Initialisation en amont pour le calcul qui suit
 
         uint32_t bytePerSec = freqEch*bytePerBloc;
-        wav.write(reinterpret_cast<char*>(&bytePerSec), sizeof(bytePerSec));
+        wavC.write(reinterpret_cast<char*>(&bytePerSec), sizeof(bytePerSec));
 
         //      2.7 Ecriture du nb d'octets par bloc d'échantillonnage
 
         //Initilisation en amont
-        wav.write(reinterpret_cast<char*>(&bytePerBloc), sizeof(bytePerBloc));
+        wavC.write(reinterpret_cast<char*>(&bytePerBloc), sizeof(bytePerBloc));
 
         //      2.8 Ecriture du nb de bits par échantillon
 
         //bitDepth est déjà initialisé à 16 bits
-        wav.write(reinterpret_cast<char*>(&bitDepth), sizeof(bitDepth));
+        wavC.write(reinterpret_cast<char*>(&bitDepth), sizeof(bitDepth));
 
         //  3. Entête de description du bloc de données
 
         //      3.1 Ecriture constante de données
 
         char data[4] = {'d','a','t','a'};
-        wav.write(data, sizeof(data));
+        wavC.write(data, sizeof(data));
 
         //      3.2 Ecriture nb d'octets de données
 
         //tailleData est déjà initialisé à 0, il sera rempli plus tard...
-        wav.write(reinterpret_cast<char*>(&tailleData), sizeof(tailleData));
-        
-        wav.close();
+        wavC.write(reinterpret_cast<char*>(&tailleData), sizeof(tailleData));
     }
     else {
         std::cerr << "Problème de création de fichier !" << std::endl;
@@ -304,39 +305,31 @@ void audio::createWave() {
 
 void audio::fillWave() {
 
-    std::ofstream wav;
-    wav.open(filePath, std::ofstream::app | std::ofstream::binary);
-
-    if (wav.is_open()) {
+    if (wavC.is_open()) {
         
         for (int i=0; i<nbSample; i++) {
 
             uint16_t byte = binaryData[i]; // Extraction donnée (ATTTENTION ne fonctionne qu'avec 16 bits pour bitDepth !) 
-            wav.write(reinterpret_cast<char*>(&byte), sizeof(byte));
+            wavC.write(reinterpret_cast<char*>(&byte), sizeof(byte));
         }
-
-        wav.close();
     }
     else {
-        std::cerr << "Problème d'ouverture de fichier pour écriture !" << std::endl;
+        std::cerr << "Problème d'ouverture de fichier pour écriture ! (Création effectuée ?)" << std::endl;
     }
 }
 
-void audio::fillWave_testSinus(float duration, float freq) {
+void audio::fillWave_testSinus(float secDuration, float freq) {
 
-    std::ofstream wav;
-    wav.open(filePath, std::ofstream::app | std::ofstream::binary);
-
-    if (wav.is_open()) {
+    if (wavC.is_open()) {
 
         /* Tous les temps indiqués sont en ms */
 
         float time = 0;
         float periodEch = 1000 / ((float) freqEch); //  Passage en ms
         float period = 1000 / freq;
-        nbSample = duration / periodEch;
+        nbSample = 1000*secDuration / periodEch; // ATTENTION Conversion en ms
         uint16_t offset = pow(2,8*sizeof(uint16_t)-1); //  Calcul offset
-        uint16_t amplitude = pow(2,8*sizeof(uint16_t)) - 1; //  Calcul amplitude
+        uint16_t amplitude = pow(2,8*sizeof(uint16_t)-1); //  Calcul amplitude
 
         for (int i=0; i<nbSample; i++) {
 
@@ -345,13 +338,11 @@ void audio::fillWave_testSinus(float duration, float freq) {
             binaryData.push_back(signal);
             time += periodEch;
 
-            wav.write(reinterpret_cast<char*>(&signal), sizeof(signal)); //  Ajout dans le fichier
+            wavC.write(reinterpret_cast<char*>(&signal), sizeof(signal)); //  Ajout dans le fichier
         }
-
-        wav.close();
     }
     else {
-        std::cerr << "Problème d'ouverture de fichier pour écriture !" << std::endl;
+        std::cerr << "Problème d'ouverture de fichier pour écriture ! (Création effectuée ?)" << std::endl;
     }
 }
 
@@ -364,27 +355,21 @@ void audio::finalWave() {
     tailleData = bitDepth*binaryData.size(); //  Actualisation du nb de données
     tailleFichier = tailleData + 44; //  Actualisation taille fichier avec entête
 
-    std::ofstream wav;
-    wav.open(filePath, std::ofstream::out | std::ofstream::binary);
-
-    if (wav.is_open()) {
+    if (wavC.is_open()) {
         
         //  1. Ajout taille du fichier
         
-        wav.seekp(4); //  Replacement au bon endroit
+        wavC.seekp(4); //  Replacement au bon endroit
         uint32_t tailleFichier_ex = tailleFichier - 8; //  Application de la norme
-        wav.write(reinterpret_cast<char*>(&tailleFichier_ex), sizeof(tailleFichier_ex));
+        wavC.write(reinterpret_cast<char*>(&tailleFichier_ex), sizeof(tailleFichier_ex));
 
         //  2. Ajout taille des données
 
-        wav.seekp(40); //  Replacement au bon endroit
-        wav.write(reinterpret_cast<char*>(&tailleData), sizeof(tailleData));
-        
-
-        wav.close();
+        wavC.seekp(40); //  Replacement au bon endroit
+        wavC.write(reinterpret_cast<char*>(&tailleData), sizeof(tailleData));
     }
     else {
-        std::cerr << "Problème d'ouverture de fichier pour écriture !" << std::endl;
+        std::cerr << "Problème d'ouverture de fichier pour écriture ! (Création effectuée ?)" << std::endl;
     }
 }
 
@@ -496,7 +481,7 @@ std::string audio::analyseLogicData() {
             msg += ".";
         }
         else if ( not(buffer) and (duration > tolerance*interWordDuration) ) { //  Détection espace inter-mots
-            msg += "  ";
+            msg += "   ";
         }
         else if ( not(buffer) and (duration > tolerance*interLetterDuration) ) { // Détection espace inter-lettre
             msg += " "; 
@@ -581,7 +566,7 @@ void audio::createBinary() {
     float periodEch = 1/freqEch; // Période en s (ATTENTION pas ms)
 
     uint16_t offset = pow(2,8*sizeof(uint16_t)-1); //  Calcul offset
-    uint16_t amplitude = pow(2,8*sizeof(uint16_t)) - 1; //  Calcul amplitude
+    uint16_t amplitude = pow(2,8*sizeof(uint16_t)-1); //  Calcul amplitude
     
     for (int i=0; i<nbSample; i++) {
 

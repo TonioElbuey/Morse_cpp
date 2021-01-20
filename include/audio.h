@@ -12,6 +12,8 @@ public:
 
     audio();
 
+    ~audio();
+
     void set_filePath(string path);
 
     void set_binaryData(std::vector<uint16_t> data);
@@ -64,7 +66,10 @@ private:
 
     /* Variables pour la gestion du fichier audio */
 
-    string filePath = "./MonMessageMorse.wav"; //Emplacement fichier audio pour lecture/création (par défaut répertoire courant pour création)
+    std::ofstream wavC; // Mode d'ouverture pour l'écriture
+    std::ifstream wavR; // Mode d'ouverture pour la lecture
+
+    string filePath = "../wave_exemples/MonMessageMorse.wav"; //Emplacement fichier audio pour lecture/création (par défaut répertoire courant pour création)
     uint16_t bitDepth = 16; //Nombre de bits par échantillons
     uint32_t tailleFichier = 0; //Taille du fichier .wav
     uint32_t tailleData = 0; //Taille des données binaires audio pour .wav
@@ -78,7 +83,7 @@ private:
 
     /* Variables sur les propriétés du message */
 
-    float dotDuration = 100;// Temps en ms
+    float dotDuration = 150;// Temps en ms
     float intraLetterDuration = 50;
 
     float interLetterDuration = 0;// Variables initialisées dans le constructeur ou le détecteur
@@ -87,6 +92,6 @@ private:
 
     float tolerance = 0.9;// Tolérance pour la détection
 
-    float freqSin = 800; // Fréquence en Hz
+    float freqSin = 440; // Fréquence en Hz
     
 };
