@@ -29,7 +29,7 @@ void interface::frInput() {
 
     if ( not(lectureFr) ) { // Si saisie clavier
         std::cin.ignore();
-        std::cout << "Text à encoder (sur une seule ligne) :" << std::endl;
+        std::cout << "Texte à encoder (sur une seule ligne) :" << std::endl;
         getline(cin, texte);
     }
     else {
@@ -39,6 +39,12 @@ void interface::frInput() {
         getline(cin, fileName);
         filePathFr += fileName;
 
+        std::cout << std::endl;
+
+        std::cout << "Désolé cette fonctionnalité n'est pas disponible pour le moment" << std::endl;
+        std::cout << "veuillez contacter le support pour plus d'informations..." << std::endl;
+
+        /*
         std::fstream txtFile;
         txtFile.open(filePathFr, ios::binary);
 
@@ -48,7 +54,8 @@ void interface::frInput() {
         }
         else {
             std::cerr << "Problème fichier non trouvé !" << std::endl;
-        }        
+        }
+        */ 
     }
 }
 

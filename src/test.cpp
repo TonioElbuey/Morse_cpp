@@ -64,7 +64,7 @@ void test::extract() {
     exemple.preExtract();
     exemple.extract();
 
-    std::vector<uint16_t> data;
+    std::vector<int16_t> data;
     data = exemple.get_binaryData();
     int length = data.size();
 
@@ -117,7 +117,7 @@ void test::fillWave_testSinus() {
     float secDuration = 10; // En s
 
     exemple.fillWave_testSinus(secDuration, freq);
-    std::vector<uint16_t> data;
+    std::vector<int16_t> data;
     data = exemple.get_binaryData();
     int length = data.size();
 
@@ -133,13 +133,13 @@ void test::fillWave_testSinus() {
 bool test::lissage() {
 
     audio exemple;
-    std::vector<uint16_t> test = {1,2,6,4,5};
+    std::vector<int16_t> test = {1,2,6,4,5};
     exemple.set_binaryData(test);
     exemple.set_nbSample(5);
     exemple.lissage();
     bool valid = true;
 
-    if (exemple.get_binaryData() != (std::vector<uint16_t>) {1,3,4,5,5}) {
+    if (exemple.get_binaryData() != (std::vector<int16_t>) {1,3,4,5,5}) {
         valid = false;
     }
     return valid;
@@ -150,7 +150,7 @@ bool test::lissage() {
 void test::detecLogicData() {
 
     audio exemple;
-    std::vector<uint16_t> test = {1,2,0,0,5};
+    std::vector<int16_t> test = {1,2,0,0,5};
     exemple.set_binaryData(test);
     exemple.set_nbSample(5);
     exemple.detecLogicData();
@@ -166,7 +166,7 @@ void test::detecLogicData() {
 bool test::detecDurations() {
 
     audio exemple;
-    std::vector<uint16_t> test = {1,2,0,0,5};
+    std::vector<int16_t> test = {1,2,0,0,5};
     exemple.set_binaryData(test);
     exemple.set_nbSample(5);
     exemple.detecLogicData();

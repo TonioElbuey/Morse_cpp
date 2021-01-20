@@ -16,7 +16,7 @@ public:
 
     void set_filePath(string path);
 
-    void set_binaryData(std::vector<uint16_t> data);
+    void set_binaryData(std::vector<int16_t> data);
 
     void set_nbSample(int nb);
 
@@ -34,7 +34,7 @@ public:
 
     float get_dashDuration();
 
-    std::vector<uint16_t> get_binaryData();
+    std::vector<int16_t> get_binaryData();
 
     std::vector<bool> get_logicData();
 
@@ -78,12 +78,12 @@ private:
 
     /* Variables pour l'écriture/la récupération des données */
 
-    std::vector<uint16_t> binaryData;
+    std::vector<int16_t> binaryData;
     std::vector<bool> logicData;
 
     /* Variables sur les propriétés du message */
 
-    float dotDuration = 150;// Temps en ms
+    float dotDuration = 100;// Temps en ms
     float intraLetterDuration = 50;
 
     float interLetterDuration = 0;// Variables initialisées dans le constructeur ou le détecteur

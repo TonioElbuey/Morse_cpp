@@ -25,7 +25,7 @@ void audio::set_filePath(string path){
 
 
 
-void audio::set_binaryData(std::vector<uint16_t> data) {
+void audio::set_binaryData(std::vector<int16_t> data) {
     binaryData = data;
 }
 
@@ -55,7 +55,7 @@ int audio::get_tailleFichier(){
 
 
 
-std::vector<uint16_t> audio::get_binaryData(){
+std::vector<int16_t> audio::get_binaryData(){
     return binaryData;
 }
 
@@ -328,13 +328,11 @@ void audio::fillWave_testSinus(float secDuration, float freq) {
         float periodEch = 1000 / ((float) freqEch); //  Passage en ms
         float period = 1000 / freq;
         nbSample = 1000*secDuration / periodEch; // ATTENTION Conversion en ms
-        uint16_t offset = pow(2,8*sizeof(uint16_t)-1); //  Calcul offset
-        uint16_t amplitude = pow(2,8*sizeof(uint16_t)-1); //  Calcul amplitude
+        int16_t amplitude = pow(2,8*sizeof(int16_t)-2); //  Calcul amplitude
 
         for (int i=0; i<nbSample; i++) {
 
-            uint16_t signal = ((float) amplitude)*sin(2*3.14*time/period); //  Création signal (ATTENTION ne fonctionne qu'avec 16 bits pour bitDepth)
-            signal += offset; //  Décalage pour recentrer sur la plage de codage
+            int16_t signal = ((float) amplitude)*sin(2*3.14*time/period); //  Création signal (ATTENTION ne fonctionne qu'avec 16 bits pour bitDepth)
             binaryData.push_back(signal);
             time += periodEch;
 
@@ -379,7 +377,7 @@ void audio::lissage() {
 
     /* Lissage du signal pour éviter l'interprétation de "0" issus du sinus et non d'un silence morse */
 
-    std::vector<uint16_t> binaryDataFinal = binaryData;
+    std::vector<int16_t> binaryDataFinal = binaryData;
 
     for (int i=1; i<nbSample-1; i++) {
 
@@ -398,7 +396,7 @@ void audio::detecLogicData() {
 
     for (int i=0; i<nbSample; i++) {
 
-        logicData.push_back(0 < binaryData[i]);
+        logicData.push_back(0 < abs(binaryData[i]));
     }
 }
 
@@ -563,16 +561,14 @@ void audio::createLogicData(std::string msg) {
 void audio::createBinary() {
 
     float time = 0; //  Variable temporelle pour le sinus
-    float periodEch = 1/freqEch; // Période en s (ATTENTION pas ms)
+    float periodEch = 1/((float) freqEch); // Période en ms
 
-    uint16_t offset = pow(2,8*sizeof(uint16_t)-1); //  Calcul offset
-    uint16_t amplitude = pow(2,8*sizeof(uint16_t)-1); //  Calcul amplitude
+    int16_t amplitude = pow(2,8*sizeof(int16_t)-2); //  Calcul amplitude
     
     for (int i=0; i<nbSample; i++) {
 
         if (logicData[i]) { //  Si émission
-            uint16_t signal = ((float) amplitude)*sin(2*3.14*time*freqSin); //  Création signal (ATTENTION ne fonctionne qu'avec 16 bits pour bitDepth)
-            signal += offset; //  Décalage pour recentrer sur la plage de codage
+            int16_t signal = ((float) amplitude)*sin(2*3.14*time*freqSin); //  Création signal (ATTENTION ne fonctionne qu'avec 16 bits pour bitDepth)
             binaryData.push_back(signal);
         }
         else { //   Si silence

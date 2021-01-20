@@ -6,7 +6,6 @@ using namespace std;
 
 int main() {
 
-    /*
     interface dialog;
     audio wavFile;
     msg message;
@@ -39,8 +38,4 @@ int main() {
         std::cout << "Message décodé : ";
         std::cout << message.get_msg_fr() << std::endl;
     }
-    */
-
-    test T;
-    T.fillWave_testSinus();
 }
